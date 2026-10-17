@@ -1,0 +1,20 @@
+# your photos and the edit data the app saves while you work
+uploads/
+
+# Python environment and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# local settings and secrets
+.env
+.env.*
+.claude/
+
+# editor / OS clutter
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhotoEditor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">PhotoEditor</div>
+  <label class="btn primary" for="fileInput" id="openBtn">Open photo</label>
+  <input type="file" id="fileInput" accept="image/*" hidden>
+  <span id="fileName" class="muted"></span>
+  <div class="spacer"></div>
+  <button id="undoBtn" class="btn" title="Undo (Ctrl+Z)" disabled>Undo</button>
+  <button id="redoBtn" class="btn" title="Redo (Ctrl+Y)" disabled>Redo</button>
+  <button id="compareBtn" class="btn" title="Hold to see the original" disabled>Hold to compare</button>
+  <button id="resetBtn" class="btn" disabled>Reset</button>
+  <select id="exportFormat" class="select" disabled>
+    <option value="jpeg">JPG</option>
+    <option value="png">PNG</option>
+    <option value="webp">WEBP</option>
+  </select>
+  <button id="downloadBtn" class="btn primary" disabled>Download</button>
+</header>
+
+<main class="layout">
+  <!-- ===================== main tools ===================== -->
+  <aside class="panel" id="panel">
+    <section>
+      <h3>Transform</h3>
+      <div class="grid2">
+        <button class="btn tool" data-op="rotate" data-angle="90" disabled>Rotate left</button>
+        <button class="btn tool" data-op="rotate" data-angle="270" disabled>Rotate right</button>
+        <button class="btn tool" data-op="flip" data-axis="h" disabled>Flip horizontal</button>
+        <button class="btn tool" data-op="flip" data-axis="v" disabled>Flip vertical</button>
+      </div>
+      <div class="slider" id="straightenRow">
+        <label>Straighten (°)</label>
+        <div class="ctl">
+          <input type="range" id="straighten" min="-45" max="45" step="0.5" value="0" disabled>
+          <input type="number" class="val" min="-45" max="45" step="0.5" value="0" disabled>
+          <button id="straightenApply" class="btn small" disabled>Apply</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Crop</h3>
+      <div class="row">
+        <select id="cropRatio" class="select" disabled>
+          <option value="free">Free</option>
+          <option value="1">1:1</option>
+          <option value="1.3333">4:3</option>
+          <option value="1.5">3:2</option>
+          <option value="1.7778">16:9</option>
+          <option value="0.8">4:5</option>
+        </select>
+        <button id="cropBtn" class="btn" disabled>Start crop</button>
+      </div>
+      <div class="row hidden" id="cropActions">
+        <button id="cropApply" class="btn primary small">Apply crop</button>
+        <button id="cropCancel" class="btn small">Cancel</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>Resize</h3>
+      <div class="row">
+        <input type="number" id="resizeW" class="num" min="1" disabled> ×
+        <input type="number" id="resizeH" class="num" min="1" disabled> px
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="resizeLock" checked> Keep proportions</label>
+        <button id="resizeApply" class="btn small" disabled>Apply</button>
+      </div>
+    </section>
+
+    <section title="Double-click a slider to reset it">
+      <h3>Adjust<button id="adjReset" class="link" disabled>reset</button></h3>
+      <div class="slider adj" data-key="brightness"><label>Brightness</label><div class="ctl"><input type="range" min="0" max="200" value="100" disabled><input type="number" class="val" min="0" max="200" value="100" disabled></div></div>
+      <div class="slider adj" data-key="contrast"><label>Contrast</label><div class="ctl"><input type="range" min="0" max="200" value="100" disabled><input type="number" class="val" min="0" max="200" value="100" disabled></div></div>
+      <div class="slider adj" data-key="saturation"><label>Saturation</label><div class="ctl"><input type="range" min="0" max="200" value="100" disabled><input type="number" class="val" min="0" max="200" value="100" disabled></div></div>
+      <div class="slider adj" data-key="sharpness"><label>Sharpness</label><div class="ctl"><input type="range" min="0" max="300" value="100" disabled><input type="number" class="val" min="0" max="300" value="100" disabled></div></div>
+      <div class="slider adj" data-key="warmth"><label>Warmth</label><div class="ctl"><input type="range" min="-100" max="100" value="0" disabled><input type="number" class="val" min="-100" max="100" value="0" disabled></div></div>
+    </section>
+
+    <section id="nrSection">
+      <h3>Noise reduction <button id="nrReset" class="link" disabled>reset</button></h3>
+      <div class="slider adj" data-key="nr_lum"><label title="Smooths grain in brightness">Luminance</label><div class="ctl"><input type="range" min="0" max="100" value="0" disabled><input type="number" class="val" min="0" max="100" value="0" disabled></div></div>
+      <div class="slider adj sub off" data-parent="nr_lum" data-key="nr_lum_detail"><label title="Higher keeps more fine texture">Detail</label><div class="ctl"><input type="range" min="0" max="100" value="50" disabled><input type="number" class="val" min="0" max="100" value="50" disabled></div></div>
+      <div class="slider adj sub off" data-parent="nr_lum" data-key="nr_lum_contrast"><label title="Brings back contrast the smoothing flattened">Contrast</label><div class="ctl"><input type="range" min="0" max="100" value="0" disabled><input type="number" class="val" min="0" max="100" value="0" disabled></div></div>
+      <div class="slider adj" data-key="nr_color"><label title="Removes coloured speckles and blotches">Color</label><div class="ctl"><input type="range" min="0" max="100" value="0" disabled><input type="number" class="val" min="0" max="100" value="0" disabled></div></div>
+      <div class="slider adj sub off" data-parent="nr_color" data-key="nr_color_detail"><label title="Higher keeps thin coloured edges sharp">Detail</label><div class="ctl"><input type="range" min="0" max="100" value="50" disabled><input type="number" class="val" min="0" max="100" value="50" disabled></div></div>
+      <div class="slider adj sub off" data-parent="nr_color" data-key="nr_color_smooth"><label title="Higher removes larger colour blotches">Smoothness</label><div class="ctl"><input type="range" min="0" max="100" value="50" disabled><input type="number" class="val" min="0" max="100" value="50" disabled></div></div>
+    </section>
+
+    <section>
+      <h3>Retouch</h3>
+      <button id="liqOpen" class="btn wide" disabled>Liquify…</button>
+    </section>
+
+    <section>
+      <h3>Filters</h3>
+      <div class="grid3" id="filters">
+        <button class="btn tool" data-filter="grayscale" disabled>B&amp;W</button>
+        <button class="btn tool" data-filter="sepia" disabled>Sepia</button>
+        <button class="btn tool" data-filter="vignette" disabled>Vignette</button>
+        <button class="btn tool" data-filter="autocontrast" disabled>Auto fix</button>
+        <button class="btn tool" data-filter="sharpen" disabled>Sharpen</button>
+        <button class="btn tool" data-filter="blur" disabled>Blur</button>
+        <button class="btn tool" data-filter="smooth" disabled>Smooth</button>
+        <button class="btn tool" data-filter="equalize" disabled>Equalize</button>
+        <button class="btn tool" data-filter="posterize" disabled>Posterize</button>
+        <button class="btn tool" data-filter="invert" disabled>Invert</button>
+        <button class="btn tool" data-filter="emboss" disabled>Emboss</button>
+        <button class="btn tool" data-filter="edge" disabled>Edges</button>
+      </div>
+    </section>
+
+    <section>
+      <h3>History</h3>
+      <ol id="history" class="history"><li class="muted">No edits yet</li></ol>
+    </section>
+  </aside>
+
+  <!-- ===================== liquify tools ===================== -->
+  <aside class="panel hidden" id="liqPanel">
+    <section class="row liq-actions">
+      <button class="btn" id="liqCancel">Cancel</button>
+      <button class="btn primary" id="liqApply">Apply liquify</button>
+    </section>
+    <section>
+      <h3>Liquify tools</h3>
+      <div class="grid2" id="liqTools">
+        <button class="btn tool active" data-tool="warp" title="Forward Warp (W): push pixels as you drag">Forward Warp</button>
+        <button class="btn tool" data-tool="reconstruct" title="Reconstruct (R): paint back towards the original">Reconstruct</button>
+        <button class="btn tool" data-tool="smooth" title="Smooth (E): soften jagged distortions">Smooth</button>
+        <button class="btn tool" data-tool="twirlcw" title="Twirl clockwise (C)">Twirl ↻</button>
+        <button class="btn tool" data-tool="twirlccw" title="Twirl counter-clockwise (Alt+C)">Twirl ↺</button>
+        <button class="btn tool" data-tool="pucker" title="Pucker (S): pull pixels towards the centre">Pucker</button>
+        <button class="btn tool" data-tool="bloat" title="Bloat (B): push pixels away from the centre">Bloat</button>
+      </div>
+    </section>
+    <section>
+      <h3>Brush options</h3>
+      <div class="slider liq" data-key="size"><label>Size (px)</label><div class="ctl"><input type="range" min="5" max="600" value="100"><input type="number" class="val" min="5" max="600" value="100"></div></div>
+      <div class="slider liq" data-key="pressure"><label title="Photoshop calls this Pressure">Strength</label><div class="ctl"><input type="range" min="1" max="100" value="50"><input type="number" class="val" min="1" max="100" value="50"></div></div>
+      <div class="slider liq" data-key="density"><label>Density</label><div class="ctl"><input type="range" min="0" max="100" value="50"><input type="number" class="val" min="0" max="100" value="50"></div></div>
+      <div class="slider liq" data-key="rate"><label>Rate</label><div class="ctl"><input type="range" min="1" max="100" value="60"><input type="number" class="val" min="1" max="100" value="60"></div></div>
+      <div class="slider liq" data-key="smoothing"><label>Stroke smoothing</label><div class="ctl"><input type="range" min="0" max="100" value="30"><input type="number" class="val" min="0" max="100" value="30"></div></div>
+      <p class="hint">Size: [ and ] keys. Density: how soft the brush edge is. Rate: speed for Twirl, Pucker, Bloat, Reconstruct and Smooth while you hold the mouse. Stroke smoothing: steadies your hand.</p>
+    </section>
+    <section>
+      <h3>Strokes</h3>
+      <div class="grid2">
+        <button class="btn tool" id="liqUndo" title="Ctrl+Z">Undo stroke</button>
+        <button class="btn tool" id="liqRedo" title="Ctrl+Y">Redo stroke</button>
+      </div>
+      <button class="btn wide" id="liqRestore">Restore all</button>
+    </section>
+  </aside>
+
+  <!-- ===================== canvas ===================== -->
+  <section class="stage" id="stage">
+    <div class="viewport" id="viewport">
+      <div class="zoom-area" id="zoomArea">
+        <div class="drop" id="dropHint">
+          <p><strong>Drop a photo here</strong></p>
+          <p class="muted">or click “Open photo”. JPG, PNG, WEBP, BMP, GIF, TIFF</p>
+        </div>
+        <div class="canvas-wrap hidden" id="canvasWrap">
+          <img id="preview" alt="Photo preview">
+          <canvas id="liqCanvas" class="hidden"></canvas>
+          <div id="cropBox" class="crop-box hidden">
+            <span class="h nw"></span><span class="h ne"></span><span class="h sw"></span><span class="h se"></span>
+          </div>
+          <div id="brush" class="brush hidden"></div>
+        </div>
+      </div>
+    </div>
+    <div class="zoombar hidden" id="zoombar">
+      <button class="zbtn" id="zoomOut" title="Zoom out (Ctrl -)">−</button>
+      <input id="zoomVal" class="zval" value="100%" title="Type a zoom level and press Enter">
+      <button class="zbtn" id="zoomIn" title="Zoom in (Ctrl +)">+</button>
+      <button class="zbtn text" id="zoomFit" title="Fit to screen (Ctrl 0)">Fit</button>
+      <button class="zbtn text" id="zoom100" title="Actual pixels (Ctrl 1)">100%</button>
+    </div>
+    <div class="spinner hidden" id="spinner"></div>
+    <div class="status" id="status"></div>
+  </section>
+</main>
+
+<div class="toast hidden" id="toast"></div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script src="{{ url_for('static', filename='liquify.js') }}"></script>
+</body>
+</html>
