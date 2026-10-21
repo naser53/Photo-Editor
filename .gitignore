@@ -11,6 +11,7 @@ __pycache__/
 .env
 .env.*
 .claude/
+API.txt
 
 # editor / OS clutter
 .vscode/
