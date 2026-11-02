@@ -40,3 +40,8 @@ Manual start: `pip install -r requirements.txt` then `python app.py`.
 - `editor.py` – the Pillow editing pipeline (including noise reduction and the liquify mesh warp)
 - `templates/index.html`, `static/style.css`, `static/app.js`, `static/liquify.js` – the web page
 - `uploads/` – photos you open are stored here (safe to empty; not included in the repository)
+
+## Android app
+
+An Android version that edits on the phone (no server) lives in [`android/`](android/README.md).
+The **Android APK** GitHub Actions workflow builds an installable APK.
