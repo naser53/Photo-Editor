@@ -22,8 +22,9 @@ curl -fsSL https://raw.githubusercontent.com/naser53/photo-editor/main/deploy/se
 sudo bash setup_vps.sh
 ```
 
-It installs everything into `/opt/photo-editor`, runs the app as a service behind nginx on port 80 with a
-login, and can be run again later to update. Copy `secret.key` to `/opt/photo-editor/` once for the AI keys.
+It installs everything into `/opt/photo-editor` and runs the app as a service behind nginx with a login,
+at `http://SERVER_IP:8090`. With a domain: `sudo DOMAIN=photo.example.com bash setup_vps.sh` serves it on
+port 80 for that domain. Other nginx sites on the server are left untouched. Run it again later to update. Copy `secret.key` to `/opt/photo-editor/` once for the AI keys.
 
 ## Features
 
