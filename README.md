@@ -15,6 +15,16 @@ Close the black window to stop the server.
 
 Manual start: `pip install -r requirements.txt` then `python app.py`.
 
+## Install on an Ubuntu VPS
+
+```
+curl -fsSL https://raw.githubusercontent.com/naser53/photo-editor/main/deploy/setup_vps.sh -o setup_vps.sh
+sudo bash setup_vps.sh
+```
+
+It installs everything into `/opt/photo-editor`, runs the app as a service behind nginx on port 80 with a
+login, and can be run again later to update. Copy `secret.key` to `/opt/photo-editor/` once for the AI keys.
+
 ## Features
 
 - Open a photo (button or drag & drop): JPG, PNG, WEBP, BMP, GIF, TIFF
