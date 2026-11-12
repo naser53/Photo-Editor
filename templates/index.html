@@ -28,6 +28,24 @@
 <main class="layout">
   <!-- ===================== main tools ===================== -->
   <aside class="panel" id="panel">
+    <section id="aiSection">
+      <h3>AI command</h3>
+      <div class="ai-provider">
+        <label for="aiProvider">Provider</label>
+        <select id="aiProvider" class="select" title="Which AI service handles your commands"></select>
+      </div>
+      <div class="ai-provider">
+        <label for="aiModel">Model</label>
+        <select id="aiModel" class="select" title="Free-tier models; numbers are requests per minute / per day"></select>
+      </div>
+      <textarea id="aiText" class="ai-text" rows="2" dir="auto" placeholder="e.g. make it warmer and a bit brighter" disabled></textarea>
+      <div class="row ai-actions">
+        <button id="aiGo" class="btn primary small" disabled>Apply</button>
+        <button id="aiUndo" class="link hidden" title="Put the sliders back to how they were before this command">undo</button>
+      </div>
+      <p id="aiNote" class="hint" dir="auto"></p>
+    </section>
+
     <section>
       <h3>Transform</h3>
       <div class="grid2">

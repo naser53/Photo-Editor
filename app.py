@@ -11,6 +11,7 @@ from collections import OrderedDict
 from flask import Flask, jsonify, render_template, request, send_file, abort
 from PIL import Image, UnidentifiedImageError
 
+import ai
 import editor
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -181,6 +182,21 @@ def upload_liquify():
         f.write(w.to_bytes(4, "little") + h.to_bytes(4, "little") + raw)
     _maps[map_id] = editor.LiquifyMap(w, h, raw)
     return jsonify(id=map_id)
+
+
+@app.get("/api/ai/providers")
+def ai_providers():
+    return jsonify(providers=ai.providers())
+
+
+@app.post("/api/ai/command")
+def ai_command():
+    data = request.get_json(force=True) or {}
+    try:
+        adj, note = ai.command(data.get("provider"), data.get("text"), data.get("adjustments"), data.get("model"))
+    except ai.AIError as e:
+        return jsonify(error=str(e)), 400
+    return jsonify(adjustments=adj, note=note)
 
 
 @app.errorhandler(413)

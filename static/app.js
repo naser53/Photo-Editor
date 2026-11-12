@@ -74,8 +74,8 @@
   }
 
   function setEnabled(on) {
-    $("panel").querySelectorAll("button, input, select").forEach((el) => {
-      if (el.closest("#cropActions")) return;
+    $("panel").querySelectorAll("button, input, select, textarea").forEach((el) => {
+      if (el.closest("#cropActions") || el.id === "aiProvider" || el.id === "aiModel") return;  // provider can be picked before a photo is open
       el.disabled = !on;
     });
     ["compareBtn", "resetBtn", "exportFormat", "downloadBtn"].forEach((id) => { $(id).disabled = !on; });
@@ -143,6 +143,7 @@
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.statusText);
+      aiBefore = null; $("aiUndo").classList.add("hidden"); aiSay("");
       Object.assign(state, { id: data.id, name: data.name, ops: [], redo: [], adj: { ...DEFAULT_ADJ }, fit: true, fullW: 0, fullH: 0 });
       endCrop();
       syncSliders();
@@ -201,7 +202,7 @@
     state.ops.push(state.redo.pop()); refreshButtons(); render();
   }
   function resetAll() {
-    state.ops = []; state.redo = []; state.adj = { ...DEFAULT_ADJ };
+    state.ops = []; state.redo = []; state.adj = { ...DEFAULT_ADJ }; aiBefore = null; $("aiUndo").classList.add("hidden");
     syncSliders(); straighten.set(0); endCrop(); refreshButtons(); render();
   }
 
@@ -481,6 +482,88 @@
   wrap.addEventListener("pointerup", () => {
     if (drag && box && (box.w < 8 || box.h < 8)) { defaultBox(); drawBox(); }
     drag = null;
+  });
+
+  // ================================================================ AI command box
+  // A sentence ("make it warmer and brighter") goes to Groq or Gemini via Flask;
+  // the reply is a set of slider values that we apply like a manual slider move.
+  const aiSel = $("aiProvider"), aiText = $("aiText"), aiNote = $("aiNote");
+  let aiBefore = null;   // slider values before the last AI command (for its undo link)
+  const aiSay = (msg, isErr) => { aiNote.textContent = msg || ""; aiNote.classList.toggle("err", !!isErr); };
+
+  const aiModel = $("aiModel");
+  let aiProviders = [];
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (_) { /* storage blocked */ } },
+  };
+  function aiFillModels() {
+    const p = aiProviders.find((x) => x.id === aiSel.value);
+    aiModel.innerHTML = "";
+    (p ? p.models : []).forEach((m) => {
+      const o = document.createElement("option");
+      o.value = m.id; o.textContent = m.label; o.title = m.id;
+      aiModel.appendChild(o);
+    });
+    const saved = store.get("pe.aiModel." + aiSel.value);
+    if (p && p.models.some((m) => m.id === saved)) aiModel.value = saved;
+  }
+
+  fetch("/api/ai/providers").then((r) => r.json()).then(({ providers }) => {
+    aiProviders = providers;
+    const saved = store.get("pe.aiProvider");
+    aiSel.innerHTML = "";
+    providers.forEach((p) => {
+      const o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = p.label + (p.ready ? "" : " (no key)");
+      aiSel.appendChild(o);
+    });
+    const pick = providers.find((p) => p.id === saved) || providers.find((p) => p.ready) || providers[0];
+    if (pick) aiSel.value = pick.id;
+    aiFillModels();
+  }).catch(() => aiSay("Could not load the AI providers", true));
+
+  aiSel.addEventListener("change", () => { store.set("pe.aiProvider", aiSel.value); aiFillModels(); aiSay(""); });
+  aiModel.addEventListener("change", () => { store.set("pe.aiModel." + aiSel.value, aiModel.value); aiSay(""); });
+
+  async function aiRun() {
+    const text = aiText.value.trim();
+    if (!state.id || !text || $("aiGo").disabled) return;
+    if (state.mode !== "none") { toast("Finish the crop or liquify first"); return; }
+    $("aiGo").disabled = true;
+    aiSay("Thinking…");
+    try {
+      const res = await fetch("/api/ai/command", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: aiSel.value, model: aiModel.value, text, adjustments: state.adj }),
+      });
+      const data = await res.json().catch(() => ({ error: `Server error ${res.status}` }));
+      if (!res.ok || data.error) throw new Error(data.error || `Server error ${res.status}`);
+      const changed = Object.keys(DEFAULT_ADJ).filter((k) => k in data.adjustments && data.adjustments[k] !== state.adj[k]);
+      if (!changed.length) { aiSay(data.note || "Nothing to change"); return; }
+      aiBefore = { ...state.adj };
+      changed.forEach((k) => { state.adj[k] = data.adjustments[k]; });
+      syncSliders();
+      render();
+      $("aiUndo").classList.remove("hidden");
+      aiSay(data.note || "Done");
+    } catch (e) {
+      aiSay(e.message, true);
+    } finally {
+      $("aiGo").disabled = !state.id;
+    }
+  }
+  $("aiGo").addEventListener("click", aiRun);
+  aiText.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); aiRun(); }
+  });
+  $("aiUndo").addEventListener("click", () => {
+    if (!aiBefore) return;
+    state.adj = aiBefore; aiBefore = null;
+    syncSliders(); render();
+    $("aiUndo").classList.add("hidden");
+    aiSay("");
   });
 
   setEnabled(false);

@@ -20,10 +20,10 @@ if not exist ".venv\Scripts\python.exe" (
   %PY% -m venv .venv || (echo [ERROR] Could not create the virtual environment. & pause & exit /b 1)
 )
 
-rem --- 3. Install / check Flask and Pillow ---------------------------------
-".venv\Scripts\python.exe" -c "import flask, PIL" >nul 2>nul
+rem --- 3. Install / check Flask, Pillow, cryptography------------------------------
+".venv\Scripts\python.exe" -c "import flask, PIL, cryptography" >nul 2>nul
 if errorlevel 1 (
-  echo Installing Flask and Pillow ...
+  echo Installing Flask, Pillow and cryptography ...
   ".venv\Scripts\python.exe" -m pip install --upgrade pip >nul
   ".venv\Scripts\python.exe" -m pip install -r requirements.txt || (echo [ERROR] Package install failed. & pause & exit /b 1)
 )

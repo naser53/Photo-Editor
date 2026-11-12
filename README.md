@@ -31,12 +31,44 @@ Manual start: `pip install -r requirements.txt` then `python app.py`.
   Density, Rate and Stroke smoothing; stroke undo/redo, Restore all. Keys: W R E C (Alt+C) S B, [ ] for size,
   Enter to apply, Esc to cancel. The warp is applied to the full-resolution photo on download
 - Filters: B&W, sepia, vignette, auto fix, sharpen, blur, smooth, equalize, posterize, invert, emboss, edges
+- AI command box: type what you want ("make it warmer and a bit brighter", in English or Persian) and an
+  AI sets the Adjust and Noise reduction sliders for you; an "undo" link puts them back. Pick the provider
+  (Groq or Google Gemini, both have a free tier) and model in the box. See *AI keys* below
 - Undo / redo (Ctrl+Z / Ctrl+Y), edit history, hold-to-compare with the original
 - Download as JPG, PNG or WEBP at full resolution
+
+## AI keys
+
+The AI command box needs an API key for at least one provider. Either set environment variables
+(`GROQ_API_KEY`, `GEMINI_API_KEY`) or put them in `API.txt` next to `app.py`, one per line:
+
+```
+Groq API Key: gsk_...
+Gemini API Key: AIza...
+```
+
+`API.txt` itself is git-ignored. Free keys: https://console.groq.com/keys and
+https://aistudio.google.com/apikey. Pick the model in the box: only free-tier models are listed
+(Groq: GPT-OSS 120B/20B, Qwen 3.6/3.8; Gemini: 3.5 and 3.1 Flash-Lite, 3.8, 3.6 and 3 Flash).
+`GROQ_MODEL` / `GEMINI_MODEL` add one more model to the list. After adding a key to API.txt, reload the page (environment variables need an app restart).
+
+### Keys in git (encrypted)
+
+The keys are kept in the repository only in encrypted form, in `API.enc`. The secret that unlocks
+them is `secret.key`, which is git-ignored and must never be pushed.
+
+- After you change a key in `API.txt`, double-click **lock_keys.bat** (or run `python keys.py lock`),
+  then commit and push `API.enc`.
+- On a server or a new machine: `git pull`, then copy `secret.key` there once (or put its text in the
+  `PHOTOEDITOR_SECRET` environment variable). The app reads the keys straight from `API.enc`;
+  `python keys.py unlock` writes them back to `API.txt` if you want the plain file.
+- Lost `secret.key`? Make a new one by deleting it and running lock_keys.bat again, then push the new `API.enc`.
 
 ## Files
 
 - `app.py` – Flask server and API (`/api/upload`, `/api/render`, `/api/export`)
+- `keys.py`, `lock_keys.bat` – encrypt `API.txt` into `API.enc` (kept in git) and read it back
+- `ai.py` – the AI command box: sends your sentence to Groq or Gemini and returns slider values
 - `editor.py` – the Pillow editing pipeline (including noise reduction and the liquify mesh warp)
 - `templates/index.html`, `static/style.css`, `static/app.js`, `static/liquify.js` – the web page
 - `uploads/` – photos you open are stored here (safe to empty; not included in the repository)

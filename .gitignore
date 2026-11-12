@@ -12,6 +12,7 @@ __pycache__/
 .env.*
 .claude/
 API.txt
+secret.key
 
 # editor / OS clutter
 .vscode/

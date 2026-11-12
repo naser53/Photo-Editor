@@ -102,3 +102,13 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   .stage { min-height: 50vh; }
   .drop { padding: 40px 24px; }
 }
+
+/* AI command box */
+.ai-provider { display: grid; grid-template-columns: 76px 1fr; align-items: center; margin-bottom: 8px; }
+.ai-provider label { font-size: 13px; }
+.ai-provider .select { min-width: 0; width: 100%; }
+.ai-text { width: 100%; box-sizing: border-box; resize: vertical; min-height: 44px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 8px; font: inherit; }
+.ai-text:focus { outline: none; border-color: var(--accent); }
+.ai-actions { margin-top: 6px; }
+#aiNote:empty { display: none; }
+#aiNote.err { color: #e57373; }
